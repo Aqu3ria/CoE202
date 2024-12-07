@@ -101,8 +101,8 @@ if __name__ == "__main__":
     # Create datasets and dataloaders
     train_dataset = YutDataset(X_train, y_train)
     val_dataset = YutDataset(X_val, y_val)
-    train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
+    train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True, drop_last=True)
+    val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False, drop_last=True)
 
     # Initialize and train the model
     input_size = features.shape[1]  # Number of features
