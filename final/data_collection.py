@@ -116,7 +116,7 @@ class DataCollectionListener:
             feature4 = 30  # Max distance if no active enemies
         
         # Feature 5: Sum of remaining steps for all opponent's mals
-        opponent_remaining = sum([30 - pos if pos < 30 else 0 for pos in enemy_positions])
+        opponent_remaining = sum([adjusted_pos[pos] for pos in enemy_positions])
         
         logging.debug(f"Extracted Features: {feature1}, {feature2}, {own_remaining}, {feature4}, {opponent_remaining}")
         
