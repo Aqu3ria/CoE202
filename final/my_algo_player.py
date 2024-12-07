@@ -37,6 +37,7 @@ class MyAlgo(yut.engine.Player):
 
             return possible_actions[0][0], possible_actions[0][1], possible_actions[0][2], ""
         
+
         if not possible_actions:
             return possible_actions[0][0], possible_actions[0][1], possible_actions[0][2], ""
         

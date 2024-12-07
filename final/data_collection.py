@@ -18,7 +18,6 @@ class DataCollectionListener:
     def on_game_start(self, name1, name2):
         self.current_game = {'player_actions': [], 'result': None}
         self.player_names = (name1, name2)
-        logging.info(f"Game started between {name1} and {name2}")
 
     def on_turn_begin(self, turn):
         # Determine current player based on turn
@@ -51,7 +50,6 @@ class DataCollectionListener:
     def on_game_end(self, winner):
         self.current_game['result'] = winner
         self.game_history.append(self.current_game)
-        logging.info(f"Game ended. Winner: Player {winner + 1}")
 
     def extract_features(self, mal_to_move, yutscore, shortcut, my_positions, enemy_positions):
         """
@@ -75,7 +73,39 @@ class DataCollectionListener:
         feature2 = int(new_pos in list(enemy_positions))
         
         # Feature 3: Sum of remaining steps for all own mals
-        own_remaining = sum([30 - pos if pos < 30 else 0 for pos in my_positions])
+        adjusted_pos = [20.69554432,
+17.85869312,
+15.58104832,
+14.92664832,
+16.09074944,
+9.1072,
+13.73691648,
+11.5808,
+10.9264,
+11.424,
+7,
+6,
+5,
+8.5808,
+9.3088,
+4,
+7.8464,
+7,
+9.8848,
+9,
+8,
+7,
+6,
+3,
+2,
+5,
+4,
+3,
+2,
+1,
+0
+]
+        own_remaining = sum([adjusted_pos[pos]for pos in my_positions])
         
         # Feature 4: Minimum distance to opponent's mals
         active_enemy_positions = [pos for pos in enemy_positions if pos != yut.rule.FINISHED]
@@ -92,10 +122,21 @@ class DataCollectionListener:
         
         return [feature1, feature2, own_remaining, feature4, opponent_remaining]
 
-def generate_training_data(num_games=1000, seed=42):
+def generate_training_data(num_games=1000, seed=42, max_ratio=1.0):
+    """
+    Generates training data by simulating games and balancing the dataset.
+
+    Parameters:
+    - num_games (int): Number of games to simulate.
+    - seed (int): Random seed for reproducibility.
+    - max_ratio (float): Maximum ratio of losing samples to winning samples (e.g., 1.0 for equal numbers).
+
+    Returns:
+    - tuple: (features_balanced, labels_balanced)
+    """
     event_listener = DataCollectionListener()
     player1 = MyAlgo()  # Your AI
-    player2 = ExamplePlayer() # Baseline opponent
+    player2 = ExamplePlayer()  # Baseline opponent
     engine = yut.engine.GameEngine()
 
     for game_num in range(num_games):
@@ -112,15 +153,48 @@ def generate_training_data(num_games=1000, seed=42):
         for action_data in game['player_actions']:
             player_id = action_data['player']
             features.append(action_data['features'])
-            # Label is 1 if the player who took the action won, else 0
             labels.append(1 if player_id == winner else 0)
 
-    logging.info(f"Generated {len(features)} feature-action pairs.")
-    return features, labels
+    logging.info(f"Total actions collected: {len(features)}")
+    
+    # Separate the data into winning and losing actions
+    features_wins = [f for f, l in zip(features, labels) if l == 1]
+    labels_wins = [1] * len(features_wins)
+    
+    features_losses = [f for f, l in zip(features, labels) if l == 0]
+    labels_losses = [0] * len(features_losses)
+    
+    logging.info(f"Number of winning actions: {len(features_wins)}")
+    logging.info(f"Number of losing actions before balancing: {len(features_losses)}")
+    
+    # Determine the number of losing samples to keep based on the desired ratio
+    desired_num_losses = int(len(features_wins) * max_ratio)
+    logging.info(f"Desired number of losing actions after balancing: {desired_num_losses}")
+    
+    if len(features_losses) > desired_num_losses:
+        # Randomly select a subset of losing actions
+        np.random.seed(seed)  # For reproducibility
+        indices = np.random.choice(len(features_losses), desired_num_losses, replace=False)
+        features_losses_balanced = [features_losses[i] for i in indices]
+        labels_losses_balanced = [0] * desired_num_losses
+        logging.info(f"Reduced losing actions from {len(features_losses)} to {len(features_losses_balanced)}")
+    else:
+        # If already balanced or losses are fewer than desired, keep all
+        features_losses_balanced = features_losses
+        labels_losses_balanced = labels_losses
+        logging.info(f"No reduction needed for losing actions.")
+    
+    # Combine the balanced winning and losing actions
+    features_balanced = features_wins + features_losses_balanced
+    labels_balanced = labels_wins + labels_losses_balanced
+    
+    logging.info(f"Balanced dataset size: {len(features_balanced)}")
+    
+    return features_balanced, labels_balanced
 
 if __name__ == "__main__":
-    features, labels = generate_training_data(num_games=1000)
+    features, labels = generate_training_data(num_games=1000, seed=42, max_ratio=1.0)  # max_ratio=1.0 for equal classes
     # Save the data for training
-    with open('training_data.pkl', 'wb') as f:
+    with open('training_data_balanced.pkl', 'wb') as f:
         pickle.dump({'features': features, 'labels': labels}, f)
-    logging.info("Training data saved to 'training_data.pkl'.")
+    logging.info("Balanced training data saved to 'training_data_balanced.pkl'.")

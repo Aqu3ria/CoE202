@@ -7,9 +7,14 @@ from torch.utils.data import DataLoader
 import pickle
 from model_definition import YutScoreModel
 from dataset import YutDataset
+from simulate_games import simulate_games
 
 for i in range(10):
-    generate_training_data()
+    
+    features, labels = generate_training_data(num_games=1000)
+    with open('training_data.pkl', 'wb') as f:
+        pickle.dump({'features': features, 'labels': labels}, f)
+
     with open('training_data.pkl', 'rb') as f:
         data = pickle.load(f)
     features = data['features']
@@ -26,3 +31,5 @@ for i in range(10):
     # Save the trained model
     torch.save(trained_model.state_dict(), 'yut_score_model.pth')
     print("Model trained and saved as 'yut_score_model.pth'.")
+
+    simulate_games(num_games=200)
