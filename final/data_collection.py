@@ -73,48 +73,29 @@ class DataCollectionListener:
         feature2 = int(new_pos in list(enemy_positions))
         
         # Feature 3: Sum of remaining steps for all own mals
-        adjusted_pos = [20.69554432,
-17.85869312,
-15.58104832,
-14.92664832,
-16.09074944,
-9.1072,
-13.73691648,
-11.5808,
-10.9264,
-11.424,
-7,
-6,
-5,
-8.5808,
-9.3088,
-4,
-7.8464,
-7,
-9.8848,
-9,
-8,
-7,
-6,
-3,
-2,
-5,
-4,
-3,
-2,
-1,
-0
-]
+        adjusted_pos = [6.64493202, 6.14729207, 5.89636059, 5.6629769, 5.697591, 4.04090599,
+                        5.20219405, 4.81643487, 4.56128288, 4.54062104, 3.0835603, 2.67863286,
+                        2.30383731, 3.75761767, 3.80937173, 2.09748239, 3.28702273, 3.00914085,
+                        3.98916236, 3.69134038, 3.34849883, 3.01150153, 2.65381396, 1.5778695,
+                        1.18101462, 2.29534458, 2.03905422, 1.57561589, 1.18092808, 1.04535096,
+                        0.0]
         own_remaining = sum([adjusted_pos[pos]for pos in my_positions])
         
         # Feature 4: Minimum distance to opponent's mals
+        feature4 = 0
         active_enemy_positions = [pos for pos in enemy_positions if pos != yut.rule.FINISHED]
+        outcomes, probs = yut.rule.enumerate_all_cast_outcomes(depth=1)
         if active_enemy_positions:
-            distances = [abs(new_pos - enemy_pos) for enemy_pos in active_enemy_positions]
-            feature4 = min(distances)
-        else:
-            feature4 = 30  # Max distance if no active enemies
-        
+            for enemy_pos in active_enemy_positions:
+                for outcome, prob in zip( outcomes, probs ):
+                    outcome = outcome[0]
+                    prob = prob[0]
+                    pos_true = yut.rule.next_position( enemy_pos, outcome, True )
+                    pos_false = yut.rule.next_position( enemy_pos, outcome, False )
+                    if pos_true == new_pos:
+                        feature4 += prob
+                    if pos_false == new_pos and pos_true != pos_false:
+                        feature4 += prob
         # Feature 5: Sum of remaining steps for all opponent's mals
         opponent_remaining = sum([adjusted_pos[pos] for pos in enemy_positions])
         
