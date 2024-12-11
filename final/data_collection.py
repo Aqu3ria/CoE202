@@ -89,7 +89,6 @@ class DataCollectionListener:
             for enemy_pos in active_enemy_positions:
                 for outcome, prob in zip( outcomes, probs ):
                     outcome = outcome[0]
-                    prob = prob[0]
                     pos_true = yut.rule.next_position( enemy_pos, outcome, True )
                     pos_false = yut.rule.next_position( enemy_pos, outcome, False )
                     if pos_true == new_pos:
@@ -116,7 +115,7 @@ def generate_training_data(num_games=1000, seed=42, max_ratio=1.0):
     - tuple: (features_balanced, labels_balanced)
     """
     event_listener = DataCollectionListener()
-    player1 = MyAlgo()  # Your AI
+    player1 = ExamplePlayer()  # Your AI
     player2 = ExamplePlayer()  # Baseline opponent
     engine = yut.engine.GameEngine()
 

@@ -7,8 +7,6 @@ from model_definition import YutScoreModel  # Ensure this matches your model def
 from dataset import YutDataset  # Ensure you have this implemented
 import logging
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 
@@ -28,16 +26,12 @@ def train_model(model, dataloader, epochs=50, lr=0.001):
     criterion = nn.BCEWithLogitsLoss()
     optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=1e-5)  # L2 regularization
 
-    model.to(device)
-
     for epoch in range(epochs):
         model.train()
         epoch_loss = 0
         correct = 0
         total = 0
         for X_batch, y_batch in dataloader:
-            X_batch = X_batch.to(device)
-            y_batch = y_batch.to(device)
             optimizer.zero_grad()
             outputs = model(X_batch)
             loss = criterion(outputs, y_batch.float())
@@ -76,7 +70,7 @@ def validate_model(model, dataloader):
     with torch.no_grad():
         for X_batch, y_batch in dataloader:
             outputs = model(X_batch).squeeze()
-            loss = criterion(outputs, y_batch.float())
+            loss = criterion(outputs, y_batch.float().squeeze())
             val_loss += loss.item()
 
             # Calculate accuracy
@@ -92,8 +86,7 @@ if __name__ == "__main__":
     with open('training_data_balanced.pkl', 'rb') as f:
         data = pickle.load(f)
     features = torch.tensor(data['features'], dtype=torch.float32)
-    labels = torch.tensor(data['labels'], dtype=torch.float32).unsqueeze(1)
-
+    labels = torch.tensor(data['labels'], dtype=torch.float32)
     # Split data into training and validation sets
     from sklearn.model_selection import train_test_split
     X_train, X_val, y_train, y_val = train_test_split(features, labels, test_size=0.2, random_state=42, stratify=labels)
